@@ -64,4 +64,31 @@ public class AuthService : IAuthService
         var token = _tokens.Generate(user);
         return AuthResult.Ok(new AuthResponse(user.Id, user.Name, user.Email, user.Permission, token));
     }
+
+    public async Task<AuthResult> ChangePasswordAsync(ChangePasswordRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email) ||
+            string.IsNullOrWhiteSpace(request.CurrentPassword) ||
+            string.IsNullOrWhiteSpace(request.NewPassword))
+        {
+            return AuthResult.BadRequest("Email, senha atual e nova senha sao obrigatorios.");
+        }
+
+        if (request.CurrentPassword == request.NewPassword)
+        {
+            return AuthResult.BadRequest("A nova senha deve ser diferente da senha atual.");
+        }
+
+        var email = request.Email.Trim().ToLowerInvariant();
+        var user = await _users.GetByEmailAsync(email);
+        if (user is null || !BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.PasswordHash))
+        {
+            return AuthResult.Unauthorized("Credenciais invalidas.");
+        }
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        await _users.SaveChangesAsync();
+
+        return AuthResult.Success("Senha alterada com sucesso.");
+    }
 }

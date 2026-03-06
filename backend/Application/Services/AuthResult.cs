@@ -24,6 +24,7 @@ public class AuthResult
     }
 
     public static AuthResult Ok(AuthResponse data) => new(AuthResultStatus.Ok, data: data);
+    public static AuthResult Success(string message) => new(AuthResultStatus.Ok, message: message);
     public static AuthResult BadRequest(string message) => new(AuthResultStatus.BadRequest, message);
     public static AuthResult Conflict(string message) => new(AuthResultStatus.Conflict, message);
     public static AuthResult Unauthorized(string message) => new(AuthResultStatus.Unauthorized, message);

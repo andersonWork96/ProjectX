@@ -1,3 +1,6 @@
-export function jsonOrNull<T>(value: T | string): T | null {
-  return typeof value === "string" ? null : value;
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
 }

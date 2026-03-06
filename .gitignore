@@ -361,3 +361,8 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# ProjectX runtime/generated artifacts
+backend/Storage/images/
+backend/Storage/docs/
+backend/Storage/reports-state.json

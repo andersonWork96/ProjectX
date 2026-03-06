@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { toErrorMessage } from "../../../../lib/errors";
-import { login, me, register } from "../service/auth.service";
+import { changePassword, login, me, register } from "../service/auth.service";
 
 export function useAuth() {
   const [token, setToken] = useState<string>(() => {
@@ -18,8 +18,10 @@ export function useAuth() {
       localStorage.setItem("projectx_token", user.token);
       setToken(user.token);
       setMessage(`Bem-vindo, ${user.name} (${user.email})`);
+      return true;
     } catch (err) {
       setMessage(toErrorMessage(err));
+      return false;
     } finally {
       setLoading(false);
     }
@@ -34,8 +36,10 @@ export function useAuth() {
         localStorage.setItem("projectx_token", user.token);
         setToken(user.token);
         setMessage(`Bem-vindo, ${user.name} (${user.email})`);
+        return true;
       } catch (err) {
         setMessage(toErrorMessage(err));
+        return false;
       } finally {
         setLoading(false);
       }
@@ -59,6 +63,26 @@ export function useAuth() {
     setMessage("Token removido.");
   }, []);
 
+  const updatePassword = useCallback(
+    async (email: string, currentPassword: string, newPassword: string) => {
+      setMessage(null);
+      setLoading(true);
+      try {
+        const result = await changePassword({
+          email,
+          currentPassword,
+          newPassword,
+        });
+        setMessage(result.message);
+      } catch (err) {
+        setMessage(toErrorMessage(err));
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
   return {
     token,
     loading,
@@ -67,6 +91,7 @@ export function useAuth() {
     signUp,
     testToken,
     signOut,
+    updatePassword,
     setMessage,
   };
 }

@@ -4,7 +4,15 @@ export async function http<T>(
 ): Promise<T> {
   const res = await fetch(input, init);
   const text = await res.text();
-  const data = text ? (JSON.parse(text) as T | string) : ("" as T | string);
+
+  let data: T | string = "" as T | string;
+  if (text) {
+    try {
+      data = JSON.parse(text) as T | string;
+    } catch {
+      data = text;
+    }
+  }
 
   if (!res.ok) {
     throw new Error(typeof data === "string" ? data : "Erro na requisicao");

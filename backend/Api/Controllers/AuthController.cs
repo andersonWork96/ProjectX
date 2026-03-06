@@ -41,6 +41,18 @@ public class AuthController : ControllerBase
         };
     }
 
+    [HttpPost("change-password")]
+    public async Task<ActionResult<object>> ChangePassword([FromBody] ChangePasswordRequest request)
+    {
+        var result = await _authService.ChangePasswordAsync(request);
+        return result.Status switch
+        {
+            AuthResultStatus.BadRequest => BadRequest(result.Message),
+            AuthResultStatus.Unauthorized => Unauthorized(result.Message),
+            _ => Ok(new { message = result.Message })
+        };
+    }
+
     [Authorize]
     [HttpGet("me")]
     public ActionResult<object> Me()

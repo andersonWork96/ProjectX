@@ -17,6 +17,12 @@ export type LoginRequest = {
   password: string;
 };
 
+export type ChangePasswordRequest = {
+  email: string;
+  currentPassword: string;
+  newPassword: string;
+};
+
 export type MeResponse = {
   id: string;
   name: string;

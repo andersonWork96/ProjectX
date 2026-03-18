@@ -31,12 +31,14 @@ public class AuthService : IAuthService
             return AuthResult.Conflict("Email ja cadastrado.");
         }
 
+        var type = request.Type == "companion" ? "companion" : "client";
         var user = new User
         {
             Name = request.Name.Trim(),
             Email = email,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            Type = type
         };
 
         await _users.AddAsync(user);

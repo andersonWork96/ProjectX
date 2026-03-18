@@ -1,7 +1,7 @@
 using System.Text;
-using Microsoft.Extensions.FileProviders;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using ProjectX.Application.Abstractions;
 using ProjectX.Application.Services;
@@ -10,8 +10,6 @@ using ProjectX.Infrastructure.Repositories;
 using ProjectX.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
 
 builder.Services.AddControllers();
 builder.Services.AddCors(options =>
@@ -28,10 +26,17 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     var connectionString = builder.Configuration.GetConnectionString("Default");
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
 });
+
+// Auth
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
-builder.Services.AddSingleton<IReportAutomationService, ReportAutomationService>();
+
+// Social
+builder.Services.AddScoped<IPostService, PostService>();
+builder.Services.AddScoped<IProfileService, ProfileService>();
+builder.Services.AddScoped<IInteractionService, InteractionService>();
+builder.Services.AddScoped<IChatService, ChatService>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -53,13 +58,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorization();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -69,20 +72,22 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
-var docsPath = Path.Combine(app.Environment.ContentRootPath, "Storage", "docs");
-Directory.CreateDirectory(docsPath);
+// Servir uploads de imagens
+var uploadsPath = Path.Combine(app.Environment.ContentRootPath, "Storage", "uploads");
+Directory.CreateDirectory(uploadsPath);
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = new PhysicalFileProvider(docsPath),
-    RequestPath = "/docs"
+    FileProvider = new PhysicalFileProvider(uploadsPath),
+    RequestPath = "/uploads"
 });
 
-var imagesPath = Path.Combine(app.Environment.ContentRootPath, "Storage", "images");
-Directory.CreateDirectory(imagesPath);
+// Servir avatars
+var avatarsPath = Path.Combine(app.Environment.ContentRootPath, "Storage", "avatars");
+Directory.CreateDirectory(avatarsPath);
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = new PhysicalFileProvider(imagesPath),
-    RequestPath = "/images"
+    FileProvider = new PhysicalFileProvider(avatarsPath),
+    RequestPath = "/avatars"
 });
 
 app.UseCors("FrontendDev");

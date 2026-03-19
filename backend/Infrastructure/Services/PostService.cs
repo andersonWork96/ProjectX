@@ -41,6 +41,7 @@ public class PostService : IPostService
         var user = await _db.Users.FindAsync(userId);
         return new PostResponse(
             post.Id, userId, user!.Name, user.AvatarUrl,
+            user.IsCreator, true,
             caption, imageUrls, 0, 0, false, post.CreatedAt
         );
     }
@@ -110,11 +111,16 @@ public class PostService : IPostService
 
     private static PostResponse MapToResponse(Post post, int currentUserId)
     {
+        var isOnline = post.User.LastSeenAt.HasValue &&
+            (DateTime.UtcNow - post.User.LastSeenAt.Value).TotalMinutes < 5;
+
         return new PostResponse(
             post.Id,
             post.UserId,
             post.User.Name,
             post.User.AvatarUrl,
+            post.User.IsCreator,
+            isOnline,
             post.Caption,
             post.Images.Select(i => i.ImageUrl).ToList(),
             post.Likes.Count,

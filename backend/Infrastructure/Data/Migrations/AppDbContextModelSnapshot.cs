@@ -35,6 +35,12 @@ namespace ProjectX.Migrations
                         .HasColumnType("datetime")
                         .HasColumnName("criadoEm");
 
+                    b.Property<bool>("IsVip")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(false)
+                        .HasColumnName("isVip");
+
                     b.Property<DateTime?>("LastMessageAt")
                         .HasColumnType("datetime")
                         .HasColumnName("ultimaMensagemEm");
@@ -55,6 +61,54 @@ namespace ProjectX.Migrations
                         .IsUnique();
 
                     b.ToTable("tb_chats", (string)null);
+                });
+
+            modelBuilder.Entity("ProjectX.Domain.Entities.ChatRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime")
+                        .HasColumnName("criadoEm");
+
+                    b.Property<int>("FromUserId")
+                        .HasColumnType("int")
+                        .HasColumnName("deUsuarioId");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("mensagem");
+
+                    b.Property<DateTime?>("RespondedAt")
+                        .HasColumnType("datetime")
+                        .HasColumnName("respondidoEm");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasDefaultValue("pending")
+                        .HasColumnName("status");
+
+                    b.Property<int>("ToCreatorId")
+                        .HasColumnType("int")
+                        .HasColumnName("paraCriadorId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FromUserId");
+
+                    b.HasIndex("ToCreatorId");
+
+                    b.ToTable("tb_chat_requests", (string)null);
                 });
 
             modelBuilder.Entity("ProjectX.Domain.Entities.Comment", b =>
@@ -93,7 +147,7 @@ namespace ProjectX.Migrations
                     b.ToTable("tb_comments", (string)null);
                 });
 
-            modelBuilder.Entity("ProjectX.Domain.Entities.CompanionProfile", b =>
+            modelBuilder.Entity("ProjectX.Domain.Entities.CreatorPlan", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -102,48 +156,82 @@ namespace ProjectX.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("AvailableFor")
-                        .HasMaxLength(300)
-                        .HasColumnType("varchar(300)")
-                        .HasColumnName("disponivelPara");
+                    b.Property<int>("CreatorId")
+                        .HasColumnType("int")
+                        .HasColumnName("criadorId");
+
+                    b.Property<decimal>("FanPrice")
+                        .HasColumnType("decimal(10,2)")
+                        .HasColumnName("precoFa");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime")
+                        .HasColumnName("atualizadoEm");
+
+                    b.Property<decimal>("VipPrice")
+                        .HasColumnType("decimal(10,2)")
+                        .HasColumnName("precoVip");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatorId")
+                        .IsUnique();
+
+                    b.ToTable("tb_creator_plans", (string)null);
+                });
+
+            modelBuilder.Entity("ProjectX.Domain.Entities.ExclusiveContent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Caption")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("legenda");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime")
                         .HasColumnName("criadoEm");
 
-                    b.Property<string>("PriceRange")
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
-                        .HasColumnName("faixaPreco");
+                    b.Property<int>("CreatorId")
+                        .HasColumnType("int")
+                        .HasColumnName("criadorId");
 
-                    b.Property<double>("Rating")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("double")
-                        .HasDefaultValue(0.0)
-                        .HasColumnName("avaliacao");
-
-                    b.Property<int>("RatingCount")
+                    b.Property<int>("DisplayOrder")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasDefaultValue(0)
-                        .HasColumnName("totalAvaliacoes");
+                        .HasColumnName("ordem");
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("int")
-                        .HasColumnName("userId");
+                    b.Property<string>("MediaType")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)")
+                        .HasColumnName("tipoMidia");
 
-                    b.Property<bool>("Verified")
+                    b.Property<string>("MediaUrl")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("midiaUrl");
+
+                    b.Property<string>("MinPlan")
+                        .IsRequired()
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("tinyint(1)")
-                        .HasDefaultValue(false)
-                        .HasColumnName("verificado");
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)")
+                        .HasDefaultValue("fan")
+                        .HasColumnName("planoMinimo");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId")
-                        .IsUnique();
+                    b.HasIndex("CreatorId");
 
-                    b.ToTable("tb_companion_profiles", (string)null);
+                    b.ToTable("tb_exclusive_contents", (string)null);
                 });
 
             modelBuilder.Entity("ProjectX.Domain.Entities.Follow", b =>
@@ -175,37 +263,6 @@ namespace ProjectX.Migrations
                         .IsUnique();
 
                     b.ToTable("tb_follows", (string)null);
-                });
-
-            modelBuilder.Entity("ProjectX.Domain.Entities.Interest", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("id");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime")
-                        .HasColumnName("criadoEm");
-
-                    b.Property<int>("FromUserId")
-                        .HasColumnType("int")
-                        .HasColumnName("fromUserId");
-
-                    b.Property<int>("ToUserId")
-                        .HasColumnType("int")
-                        .HasColumnName("toUserId");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ToUserId");
-
-                    b.HasIndex("FromUserId", "ToUserId")
-                        .IsUnique();
-
-                    b.ToTable("tb_interests", (string)null);
                 });
 
             modelBuilder.Entity("ProjectX.Domain.Entities.Like", b =>
@@ -365,8 +422,7 @@ namespace ProjectX.Migrations
 
                     b.Property<string>("ImageUrl")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("varchar(500)")
+                        .HasColumnType("longtext")
                         .HasColumnName("imageUrl");
 
                     b.Property<int>("Order")
@@ -386,6 +442,33 @@ namespace ProjectX.Migrations
                     b.ToTable("tb_post_images", (string)null);
                 });
 
+            modelBuilder.Entity("ProjectX.Domain.Entities.SiteVisit", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("ip");
+
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int")
+                        .HasColumnName("userId");
+
+                    b.Property<DateTime>("VisitedAt")
+                        .HasColumnType("datetime")
+                        .HasColumnName("visitadoEm");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("tb_site_visits", (string)null);
+                });
+
             modelBuilder.Entity("ProjectX.Domain.Entities.Subscription", b =>
                 {
                     b.Property<int>("Id")
@@ -394,6 +477,10 @@ namespace ProjectX.Migrations
                         .HasColumnName("id");
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CreatorId")
+                        .HasColumnType("int")
+                        .HasColumnName("criadorId");
 
                     b.Property<DateTime?>("EndDate")
                         .HasColumnType("datetime")
@@ -405,23 +492,26 @@ namespace ProjectX.Migrations
                         .HasColumnType("varchar(20)")
                         .HasColumnName("statusPagamento");
 
-                    b.Property<string>("Plan")
+                    b.Property<string>("PlanType")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)")
-                        .HasColumnName("plano");
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)")
+                        .HasColumnName("tipoPlano");
 
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime")
                         .HasColumnName("dataInicio");
 
-                    b.Property<int>("UserId")
+                    b.Property<int>("SubscriberId")
                         .HasColumnType("int")
-                        .HasColumnName("userId");
+                        .HasColumnName("assinanteId");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("CreatorId");
+
+                    b.HasIndex("SubscriberId", "CreatorId")
+                        .IsUnique();
 
                     b.ToTable("tb_subscriptions", (string)null);
                 });
@@ -436,9 +526,12 @@ namespace ProjectX.Migrations
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("AvatarUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("varchar(500)")
+                        .HasColumnType("longtext")
                         .HasColumnName("avatarUrl");
+
+                    b.Property<string>("BannerUrl")
+                        .HasColumnType("longtext")
+                        .HasColumnName("bannerUrl");
 
                     b.Property<string>("Bio")
                         .HasMaxLength(500)
@@ -469,6 +562,28 @@ namespace ProjectX.Migrations
                         .HasColumnType("varchar(20)")
                         .HasColumnName("genero");
 
+                    b.Property<bool>("IsCreator")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(false)
+                        .HasColumnName("isCriador");
+
+                    b.Property<DateTime?>("LastLocationAt")
+                        .HasColumnType("datetime")
+                        .HasColumnName("ultimaLocalizacaoEm");
+
+                    b.Property<DateTime?>("LastSeenAt")
+                        .HasColumnType("datetime")
+                        .HasColumnName("ultimoAcessoEm");
+
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("double")
+                        .HasColumnName("latitude");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("double")
+                        .HasColumnName("longitude");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(120)
@@ -492,29 +607,32 @@ namespace ProjectX.Migrations
                         .HasColumnType("varchar(20)")
                         .HasColumnName("telefone");
 
-                    b.Property<string>("Plan")
+                    b.Property<string>("PlatformPlan")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(20)
                         .HasColumnType("varchar(20)")
                         .HasDefaultValue("free")
-                        .HasColumnName("plano");
+                        .HasColumnName("planoPlatforma");
 
-                    b.Property<DateTime?>("PlanExpiresAt")
+                    b.Property<DateTime?>("PlatformPlanExpiresAt")
                         .HasColumnType("datetime")
-                        .HasColumnName("planoExpiraEm");
+                        .HasColumnName("planoPlatformaExpiraEm");
 
-                    b.Property<string>("Type")
+                    b.Property<string>("Username")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)")
-                        .HasDefaultValue("client")
-                        .HasColumnName("tipo");
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)")
+                        .HasDefaultValue("")
+                        .HasColumnName("username");
 
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("Username")
                         .IsUnique();
 
                     b.ToTable("tb_users", (string)null);
@@ -539,6 +657,25 @@ namespace ProjectX.Migrations
                     b.Navigation("User2");
                 });
 
+            modelBuilder.Entity("ProjectX.Domain.Entities.ChatRequest", b =>
+                {
+                    b.HasOne("ProjectX.Domain.Entities.User", "FromUser")
+                        .WithMany()
+                        .HasForeignKey("FromUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ProjectX.Domain.Entities.User", "ToCreator")
+                        .WithMany()
+                        .HasForeignKey("ToCreatorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("FromUser");
+
+                    b.Navigation("ToCreator");
+                });
+
             modelBuilder.Entity("ProjectX.Domain.Entities.Comment", b =>
                 {
                     b.HasOne("ProjectX.Domain.Entities.Post", "Post")
@@ -558,15 +695,26 @@ namespace ProjectX.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("ProjectX.Domain.Entities.CompanionProfile", b =>
+            modelBuilder.Entity("ProjectX.Domain.Entities.CreatorPlan", b =>
                 {
-                    b.HasOne("ProjectX.Domain.Entities.User", "User")
-                        .WithOne("CompanionProfile")
-                        .HasForeignKey("ProjectX.Domain.Entities.CompanionProfile", "UserId")
+                    b.HasOne("ProjectX.Domain.Entities.User", "Creator")
+                        .WithOne("CreatorPlan")
+                        .HasForeignKey("ProjectX.Domain.Entities.CreatorPlan", "CreatorId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("User");
+                    b.Navigation("Creator");
+                });
+
+            modelBuilder.Entity("ProjectX.Domain.Entities.ExclusiveContent", b =>
+                {
+                    b.HasOne("ProjectX.Domain.Entities.User", "Creator")
+                        .WithMany("ExclusiveContents")
+                        .HasForeignKey("CreatorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Creator");
                 });
 
             modelBuilder.Entity("ProjectX.Domain.Entities.Follow", b =>
@@ -586,25 +734,6 @@ namespace ProjectX.Migrations
                     b.Navigation("Follower");
 
                     b.Navigation("Following");
-                });
-
-            modelBuilder.Entity("ProjectX.Domain.Entities.Interest", b =>
-                {
-                    b.HasOne("ProjectX.Domain.Entities.User", "FromUser")
-                        .WithMany("InterestsSent")
-                        .HasForeignKey("FromUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("ProjectX.Domain.Entities.User", "ToUser")
-                        .WithMany("InterestsReceived")
-                        .HasForeignKey("ToUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("FromUser");
-
-                    b.Navigation("ToUser");
                 });
 
             modelBuilder.Entity("ProjectX.Domain.Entities.Like", b =>
@@ -680,13 +809,21 @@ namespace ProjectX.Migrations
 
             modelBuilder.Entity("ProjectX.Domain.Entities.Subscription", b =>
                 {
-                    b.HasOne("ProjectX.Domain.Entities.User", "User")
+                    b.HasOne("ProjectX.Domain.Entities.User", "Creator")
                         .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("CreatorId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("User");
+                    b.HasOne("ProjectX.Domain.Entities.User", "Subscriber")
+                        .WithMany()
+                        .HasForeignKey("SubscriberId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Creator");
+
+                    b.Navigation("Subscriber");
                 });
 
             modelBuilder.Entity("ProjectX.Domain.Entities.Chat", b =>
@@ -707,15 +844,13 @@ namespace ProjectX.Migrations
                 {
                     b.Navigation("Comments");
 
-                    b.Navigation("CompanionProfile");
+                    b.Navigation("CreatorPlan");
+
+                    b.Navigation("ExclusiveContents");
 
                     b.Navigation("Followers");
 
                     b.Navigation("Following");
-
-                    b.Navigation("InterestsReceived");
-
-                    b.Navigation("InterestsSent");
 
                     b.Navigation("Likes");
 

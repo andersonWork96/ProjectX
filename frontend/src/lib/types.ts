@@ -1,26 +1,22 @@
 export interface AuthResponse {
   id: number;
   name: string;
+  username: string;
   email: string;
+  isCreator: boolean;
   permission: number;
+  platformPlan: string;
+  hasLocation: boolean;
   token: string;
 }
 
-export interface User {
-  id: number;
-  name: string;
-  email: string;
-  type: string;
-  avatarUrl: string | null;
-  bio: string | null;
-  city: string | null;
-  gender: string | null;
-  birthDate: string | null;
-  plan: string;
-}
-
-export interface PostImage {
-  imageUrl: string;
+export interface AdminStats {
+  anonymousVisitsToday: number;
+  creatorSubscribers: number;
+  totalUsers: number;
+  totalCreators: number;
+  totalPosts: number;
+  newUsersToday: number;
 }
 
 export interface Post {
@@ -28,6 +24,8 @@ export interface Post {
   userId: number;
   userName: string;
   userAvatarUrl: string | null;
+  userIsCreator: boolean;
+  userIsOnline: boolean;
   caption: string | null;
   images: string[];
   likesCount: number;
@@ -47,28 +45,36 @@ export interface PagedResponse<T> {
 export interface UserProfile {
   id: number;
   name: string;
-  email: string;
-  type: string;
   avatarUrl: string | null;
+  bannerUrl: string | null;
   bio: string | null;
   city: string | null;
   gender: string | null;
-  birthDate: string | null;
-  plan: string;
+  isCreator: boolean;
+  platformPlan: string;
   followersCount: number;
   followingCount: number;
   postsCount: number;
+  exclusiveCount: number;
+  subscribersCount: number;
   isFollowedByMe: boolean;
-  isInterestedByMe: boolean;
-  companionProfile: CompanionProfile | null;
+  mySubscriptionPlan: string | null;
+  creatorPlan: CreatorPlan | null;
 }
 
-export interface CompanionProfile {
-  priceRange: string | null;
-  verified: boolean;
-  rating: number;
-  ratingCount: number;
-  availableFor: string | null;
+export interface CreatorPlan {
+  fanPrice: number;
+  vipPrice: number;
+}
+
+export interface ExclusiveContent {
+  id: number;
+  caption: string | null;
+  mediaType: string;
+  mediaUrl: string | null;
+  isLocked: boolean;
+  minPlan: string;
+  createdAt: string;
 }
 
 export interface Comment {
@@ -76,6 +82,8 @@ export interface Comment {
   userId: number;
   userName: string;
   userAvatarUrl: string | null;
+  userPlatformPlan: string | null;
+  subscriptionBadge: string | null;
   text: string;
   createdAt: string;
 }
@@ -89,6 +97,16 @@ export interface Notification {
   createdAt: string;
 }
 
+export interface ChatRequestItem {
+  id: number;
+  fromUserId: number;
+  fromUserName: string;
+  fromUserAvatarUrl: string | null;
+  message: string;
+  status: string;
+  createdAt: string;
+}
+
 export interface ChatItem {
   id: number;
   otherUserId: number;
@@ -97,6 +115,7 @@ export interface ChatItem {
   lastMessage: string | null;
   lastMessageAt: string | null;
   unreadCount: number;
+  isVip: boolean;
 }
 
 export interface Message {

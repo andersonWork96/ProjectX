@@ -7,6 +7,8 @@ public record CommentResponse(
     int UserId,
     string UserName,
     string? UserAvatarUrl,
+    string? UserPlatformPlan,
+    string? SubscriptionBadge,
     string Text,
     DateTime CreatedAt
 );
@@ -20,6 +22,18 @@ public record NotificationResponse(
     DateTime CreatedAt
 );
 
+public record ChatRequestDto(
+    int Id,
+    int FromUserId,
+    string FromUserName,
+    string? FromUserAvatarUrl,
+    string Message,
+    string Status,
+    DateTime CreatedAt
+);
+
+public record SendChatRequestDto(string Message);
+
 public record ChatResponse(
     int Id,
     int OtherUserId,
@@ -27,7 +41,8 @@ public record ChatResponse(
     string? OtherUserAvatarUrl,
     string? LastMessage,
     DateTime? LastMessageAt,
-    int UnreadCount
+    int UnreadCount,
+    bool IsVip
 );
 
 public record MessageRequest(string Text);

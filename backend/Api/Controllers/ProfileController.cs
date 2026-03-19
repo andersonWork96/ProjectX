@@ -1,8 +1,10 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ProjectX.Application.Contracts;
 using ProjectX.Application.Services;
+using ProjectX.Infrastructure.Helpers;
 
 namespace ProjectX.Api.Controllers;
 
@@ -39,24 +41,83 @@ public class ProfileController : ControllerBase
     [HttpPost("avatar")]
     public async Task<IActionResult> UpdateAvatar([FromForm] IFormFile avatar)
     {
-        var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "Storage", "avatars");
-        Directory.CreateDirectory(uploadsDir);
-
-        var fileName = $"{Guid.NewGuid()}{Path.GetExtension(avatar.FileName)}";
-        var filePath = Path.Combine(uploadsDir, fileName);
-        using var stream = new FileStream(filePath, FileMode.Create);
-        await avatar.CopyToAsync(stream);
-
-        var avatarUrl = $"/avatars/{fileName}";
-        var updated = await _profileService.UpdateAvatarAsync(GetUserId(), avatarUrl);
-        return updated ? Ok(new { avatarUrl }) : NotFound();
+        var dataUri = await ImageHelper.ToBase64DataUri(avatar);
+        var updated = await _profileService.UpdateAvatarAsync(GetUserId(), dataUri);
+        return updated ? Ok(new { avatarUrl = dataUri }) : NotFound();
     }
 
     [Authorize]
-    [HttpPut("companion")]
-    public async Task<IActionResult> UpdateCompanionProfile([FromBody] CompanionProfileRequest request)
+    [HttpPost("banner")]
+    public async Task<IActionResult> UpdateBanner([FromForm] IFormFile banner)
     {
-        var updated = await _profileService.UpdateCompanionProfileAsync(GetUserId(), request);
-        return updated ? Ok(new { message = "Perfil de acompanhante atualizado." }) : BadRequest("Usuário não é acompanhante.");
+        var dataUri = await ImageHelper.ToBase64DataUri(banner);
+        var updated = await _profileService.UpdateBannerAsync(GetUserId(), dataUri);
+        return updated ? Ok(new { bannerUrl = dataUri }) : NotFound();
+    }
+
+    [Authorize]
+    [HttpPut("creator-plans")]
+    public async Task<IActionResult> SetCreatorPlans([FromBody] SetCreatorPlansRequest request)
+    {
+        var updated = await _profileService.SetCreatorPlansAsync(GetUserId(), request);
+        return updated ? Ok(new { message = "Planos atualizados." }) : BadRequest("Usuário não é criador.");
+    }
+
+    [HttpGet("{creatorId}/exclusive")]
+    public async Task<ActionResult<List<ExclusiveContentResponse>>> GetExclusiveContent(int creatorId)
+    {
+        var currentUserId = GetUserId();
+        var content = await _profileService.GetExclusiveContentAsync(creatorId, currentUserId);
+        return Ok(content);
+    }
+
+    [Authorize]
+    [HttpPost("exclusive")]
+    public async Task<IActionResult> AddExclusiveContent(
+        [FromForm] string? caption,
+        [FromForm] string mediaType,
+        [FromForm] string minPlan,
+        [FromForm] IFormFile media)
+    {
+        var dataUri = await ImageHelper.ToBase64DataUri(media);
+
+        var userId = GetUserId();
+        using var scope = HttpContext.RequestServices.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ProjectX.Infrastructure.Data.AppDbContext>();
+        var user = await db.Users.FindAsync(userId);
+        if (user is null || !user.IsCreator) return BadRequest("Não é criador.");
+
+        db.ExclusiveContents.Add(new ProjectX.Domain.Entities.ExclusiveContent
+        {
+            CreatorId = userId,
+            Caption = caption,
+            MediaType = mediaType ?? "image",
+            MediaUrl = dataUri,
+            MinPlan = minPlan ?? "fan",
+            CreatedAt = DateTime.UtcNow
+        });
+        await db.SaveChangesAsync();
+        return Ok(new { message = "Conteúdo publicado." });
+    }
+
+    [Authorize]
+    [HttpPut("exclusive/reorder")]
+    public async Task<IActionResult> ReorderExclusiveContent(
+        [FromBody] List<int> orderedIds,
+        [FromServices] ProjectX.Infrastructure.Data.AppDbContext db)
+    {
+        var userId = GetUserId();
+        var contents = await db.ExclusiveContents
+            .Where(e => e.CreatorId == userId)
+            .ToListAsync();
+
+        for (int i = 0; i < orderedIds.Count; i++)
+        {
+            var item = contents.FirstOrDefault(c => c.Id == orderedIds[i]);
+            if (item is not null) item.DisplayOrder = i;
+        }
+
+        await db.SaveChangesAsync();
+        return Ok(new { message = "Ordem atualizada." });
     }
 }

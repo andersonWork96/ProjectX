@@ -1,7 +1,6 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using ProjectX.Application.Abstractions;
 using ProjectX.Application.Services;
@@ -70,26 +69,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseStaticFiles();
-
-// Servir uploads de imagens
-var uploadsPath = Path.Combine(app.Environment.ContentRootPath, "Storage", "uploads");
-Directory.CreateDirectory(uploadsPath);
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new PhysicalFileProvider(uploadsPath),
-    RequestPath = "/uploads"
-});
-
-// Servir avatars
-var avatarsPath = Path.Combine(app.Environment.ContentRootPath, "Storage", "avatars");
-Directory.CreateDirectory(avatarsPath);
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new PhysicalFileProvider(avatarsPath),
-    RequestPath = "/avatars"
-});
-
 app.UseCors("FrontendDev");
 
 app.UseAuthentication();

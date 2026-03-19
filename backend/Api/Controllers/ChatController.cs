@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ProjectX.Application.Contracts;
 using ProjectX.Application.Services;
 
@@ -20,41 +21,72 @@ public class ChatController : ControllerBase
 
     private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
 
-    [HttpPost("start/{otherUserId}")]
-    public async Task<ActionResult<ChatResponse>> StartChat(int otherUserId)
+    // Solicitações
+    [HttpPost("request/{creatorId}")]
+    public async Task<IActionResult> SendRequest(int creatorId, [FromBody] SendChatRequestDto request)
     {
-        var chat = await _chatService.GetOrCreateChatAsync(GetUserId(), otherUserId);
-        return chat is not null ? Ok(chat) : BadRequest("Não é possível iniciar chat consigo mesmo.");
+        var result = await _chatService.SendChatRequestAsync(GetUserId(), creatorId, request.Message);
+        return result is not null ? Ok(result) : BadRequest(new { message = "Não foi possível enviar solicitação. Verifique seus limites." });
     }
 
+    [HttpGet("request-status/{creatorId}")]
+    public async Task<IActionResult> GetRequestStatus(int creatorId,
+        [FromServices] ProjectX.Infrastructure.Data.AppDbContext db)
+    {
+        var userId = GetUserId();
+        var request = await db.ChatRequests
+            .Where(r => r.FromUserId == userId && r.ToCreatorId == creatorId)
+            .OrderByDescending(r => r.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        if (request is null) return Ok(new { status = "none" });
+        return Ok(new { status = request.Status });
+    }
+
+    [HttpGet("requests/pending")]
+    public async Task<ActionResult<List<ChatRequestDto>>> GetPendingRequests()
+    {
+        return Ok(await _chatService.GetPendingRequestsAsync(GetUserId()));
+    }
+
+    [HttpPost("requests/{requestId}/respond")]
+    public async Task<IActionResult> RespondToRequest(int requestId, [FromQuery] bool accept)
+    {
+        var result = await _chatService.RespondToRequestAsync(requestId, GetUserId(), accept);
+        return result ? Ok(new { message = accept ? "Aceito." : "Recusado." }) : NotFound();
+    }
+
+    // VIP direct chat
+    [HttpPost("vip/{creatorId}")]
+    public async Task<IActionResult> StartVipChat(int creatorId)
+    {
+        var chat = await _chatService.StartVipChatAsync(GetUserId(), creatorId);
+        return chat is not null ? Ok(chat) : BadRequest(new { message = "Necessário assinatura VIP." });
+    }
+
+    // Chats
     [HttpGet]
     public async Task<ActionResult<List<ChatResponse>>> GetChats()
     {
-        var chats = await _chatService.GetChatsAsync(GetUserId());
-        return Ok(chats);
+        return Ok(await _chatService.GetChatsAsync(GetUserId()));
     }
 
     [HttpPost("{chatId}/messages")]
     public async Task<ActionResult<MessageResponse>> SendMessage(int chatId, [FromBody] MessageRequest request)
     {
-        var message = await _chatService.SendMessageAsync(chatId, GetUserId(), request.Text);
-        return Ok(message);
+        return Ok(await _chatService.SendMessageAsync(chatId, GetUserId(), request.Text));
     }
 
     [HttpGet("{chatId}/messages")]
-    public async Task<ActionResult<List<MessageResponse>>> GetMessages(
-        int chatId,
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 30)
+    public async Task<ActionResult<List<MessageResponse>>> GetMessages(int chatId, [FromQuery] int page = 1, [FromQuery] int pageSize = 30)
     {
-        var messages = await _chatService.GetMessagesAsync(chatId, GetUserId(), page, pageSize);
-        return Ok(messages);
+        return Ok(await _chatService.GetMessagesAsync(chatId, GetUserId(), page, pageSize));
     }
 
     [HttpPost("{chatId}/read")]
     public async Task<IActionResult> MarkRead(int chatId)
     {
         await _chatService.MarkMessagesReadAsync(chatId, GetUserId());
-        return Ok(new { message = "Mensagens marcadas como lidas." });
+        return Ok(new { message = "Lidas." });
     }
 }

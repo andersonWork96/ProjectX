@@ -9,34 +9,42 @@ public record UpdateProfileRequest(
     string? Phone
 );
 
-public record CompanionProfileRequest(
-    string? PriceRange,
-    string? AvailableFor
+public record SetCreatorPlansRequest(
+    decimal FanPrice,
+    decimal VipPrice
 );
 
 public record UserProfileResponse(
     int Id,
     string Name,
-    string Email,
-    string Type,
     string? AvatarUrl,
+    string? BannerUrl,
     string? Bio,
     string? City,
     string? Gender,
-    DateTime? BirthDate,
-    string Plan,
+    bool IsCreator,
+    string PlatformPlan,
     int FollowersCount,
     int FollowingCount,
     int PostsCount,
+    int ExclusiveCount,
+    int SubscribersCount,
     bool IsFollowedByMe,
-    bool IsInterestedByMe,
-    CompanionProfileResponse? CompanionProfile
+    string? MySubscriptionPlan,
+    CreatorPlanResponse? CreatorPlan
 );
 
-public record CompanionProfileResponse(
-    string? PriceRange,
-    bool Verified,
-    double Rating,
-    int RatingCount,
-    string? AvailableFor
+public record CreatorPlanResponse(
+    decimal FanPrice,
+    decimal VipPrice
+);
+
+public record ExclusiveContentResponse(
+    int Id,
+    string? Caption,
+    string MediaType,
+    string? MediaUrl,
+    bool IsLocked,
+    string MinPlan,
+    DateTime CreatedAt
 );

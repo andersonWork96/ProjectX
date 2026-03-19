@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { Notification } from "@/lib/types";
-import { Navbar } from "@/components/navbar";
+import { TopBar, BottomBar } from "@/components/navbar";
 import { ArrowLeft, Heart, MessageCircle, UserPlus, Star } from "lucide-react";
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -47,9 +47,9 @@ export default function NotificacoesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      <main className="max-w-lg mx-auto pt-16 pb-20 px-4">
+    <>
+      <TopBar />
+      <main className="flex-1 overflow-y-auto scrollbar-hide">
         <div className="flex items-center gap-3 mb-6">
           <button onClick={() => router.back()}>
             <ArrowLeft size={24} />
@@ -84,6 +84,7 @@ export default function NotificacoesPage() {
           </div>
         )}
       </main>
-    </div>
+      <BottomBar />
+    </>
   );
 }

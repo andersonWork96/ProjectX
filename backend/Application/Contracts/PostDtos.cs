@@ -7,6 +7,8 @@ public record PostResponse(
     int UserId,
     string UserName,
     string? UserAvatarUrl,
+    bool UserIsCreator,
+    bool UserIsOnline,
     string? Caption,
     List<string> Images,
     int LikesCount,

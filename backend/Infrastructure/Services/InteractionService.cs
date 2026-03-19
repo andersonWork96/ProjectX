@@ -15,7 +15,12 @@ public class InteractionService : IInteractionService
         _db = db;
     }
 
-    // ===== LIKES =====
+    private async Task<bool> IsGhost(int userId)
+    {
+        var user = await _db.Users.FindAsync(userId);
+        return user?.Permission == 1;
+    }
+
     public async Task<bool> ToggleLikeAsync(int userId, int postId)
     {
         var existing = await _db.Likes.FirstOrDefaultAsync(l => l.UserId == userId && l.PostId == postId);
@@ -23,90 +28,96 @@ public class InteractionService : IInteractionService
         {
             _db.Likes.Remove(existing);
             await _db.SaveChangesAsync();
-            return false; // unliked
+            return false;
         }
 
         _db.Likes.Add(new Like { UserId = userId, PostId = postId, CreatedAt = DateTime.UtcNow });
         await _db.SaveChangesAsync();
 
-        // Notificar dono do post
-        var post = await _db.Posts.FindAsync(postId);
-        if (post is not null && post.UserId != userId)
+        if (!await IsGhost(userId))
         {
-            var user = await _db.Users.FindAsync(userId);
-            _db.Notifications.Add(new Notification
+            var post = await _db.Posts.FindAsync(postId);
+            if (post is not null && post.UserId != userId)
             {
-                UserId = post.UserId,
-                Type = "like",
-                ReferenceId = postId,
-                MessageText = $"{user!.Name} curtiu sua publicação.",
-                CreatedAt = DateTime.UtcNow
-            });
-            await _db.SaveChangesAsync();
+                var user = await _db.Users.FindAsync(userId);
+                _db.Notifications.Add(new Notification
+                {
+                    UserId = post.UserId, Type = "like", ReferenceId = postId,
+                    MessageText = $"{user!.Name} curtiu sua publicação.", CreatedAt = DateTime.UtcNow
+                });
+                await _db.SaveChangesAsync();
+            }
         }
-
-        return true; // liked
+        return true;
     }
 
-    // ===== COMMENTS =====
     public async Task<CommentResponse?> AddCommentAsync(int userId, int postId, string text)
     {
         var post = await _db.Posts.FindAsync(postId);
         if (post is null) return null;
 
-        var comment = new Comment
-        {
-            UserId = userId,
-            PostId = postId,
-            Text = text,
-            CreatedAt = DateTime.UtcNow
-        };
-
+        var comment = new Comment { UserId = userId, PostId = postId, Text = text, CreatedAt = DateTime.UtcNow };
         _db.Comments.Add(comment);
         await _db.SaveChangesAsync();
 
         var user = await _db.Users.FindAsync(userId);
 
-        // Notificar dono do post
-        if (post.UserId != userId)
+        // Badge de assinante (se estiver comentando no post de um criador que ele assina)
+        string? badge = null;
+        var sub = await _db.Subscriptions.FirstOrDefaultAsync(s =>
+            s.SubscriberId == userId && s.CreatorId == post.UserId &&
+            s.PaymentStatus == "active" && (s.EndDate == null || s.EndDate > DateTime.UtcNow));
+        if (sub is not null) badge = sub.PlanType == "vip" ? "gold" : "bronze";
+
+        if (post.UserId != userId && !await IsGhost(userId))
         {
             _db.Notifications.Add(new Notification
             {
-                UserId = post.UserId,
-                Type = "comment",
-                ReferenceId = postId,
-                MessageText = $"{user!.Name} comentou na sua publicação.",
-                CreatedAt = DateTime.UtcNow
+                UserId = post.UserId, Type = "comment", ReferenceId = postId,
+                MessageText = $"{user!.Name} comentou na sua publicação.", CreatedAt = DateTime.UtcNow
             });
             await _db.SaveChangesAsync();
         }
 
-        return new CommentResponse(comment.Id, userId, user!.Name, user.AvatarUrl, text, comment.CreatedAt);
+        return new CommentResponse(comment.Id, userId, user!.Name, user.AvatarUrl, user.PlatformPlan, badge, text, comment.CreatedAt);
     }
 
     public async Task<List<CommentResponse>> GetCommentsAsync(int postId, int page, int pageSize)
     {
-        return await _db.Comments
+        var post = await _db.Posts.FindAsync(postId);
+        var comments = await _db.Comments
             .Include(c => c.User)
             .Where(c => c.PostId == postId)
             .OrderByDescending(c => c.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(c => new CommentResponse(c.Id, c.UserId, c.User.Name, c.User.AvatarUrl, c.Text, c.CreatedAt))
             .ToListAsync();
+
+        var result = new List<CommentResponse>();
+        foreach (var c in comments)
+        {
+            string? badge = null;
+            if (post is not null)
+            {
+                var sub = await _db.Subscriptions.FirstOrDefaultAsync(s =>
+                    s.SubscriberId == c.UserId && s.CreatorId == post.UserId &&
+                    s.PaymentStatus == "active" && (s.EndDate == null || s.EndDate > DateTime.UtcNow));
+                if (sub is not null) badge = sub.PlanType == "vip" ? "gold" : "bronze";
+            }
+            result.Add(new CommentResponse(c.Id, c.UserId, c.User.Name, c.User.AvatarUrl, c.User.PlatformPlan, badge, c.Text, c.CreatedAt));
+        }
+        return result;
     }
 
     public async Task<bool> DeleteCommentAsync(int commentId, int userId)
     {
         var comment = await _db.Comments.FirstOrDefaultAsync(c => c.Id == commentId && c.UserId == userId);
         if (comment is null) return false;
-
         _db.Comments.Remove(comment);
         await _db.SaveChangesAsync();
         return true;
     }
 
-    // ===== FOLLOW =====
     public async Task<bool> ToggleFollowAsync(int followerId, int followingId)
     {
         if (followerId == followingId) return false;
@@ -116,57 +127,25 @@ public class InteractionService : IInteractionService
         {
             _db.Follows.Remove(existing);
             await _db.SaveChangesAsync();
-            return false; // unfollowed
+            return false;
         }
 
         _db.Follows.Add(new Follow { FollowerId = followerId, FollowingId = followingId, CreatedAt = DateTime.UtcNow });
         await _db.SaveChangesAsync();
 
-        var user = await _db.Users.FindAsync(followerId);
-        _db.Notifications.Add(new Notification
+        if (!await IsGhost(followerId))
         {
-            UserId = followingId,
-            Type = "follow",
-            ReferenceId = followerId,
-            MessageText = $"{user!.Name} começou a seguir você.",
-            CreatedAt = DateTime.UtcNow
-        });
-        await _db.SaveChangesAsync();
-
-        return true; // followed
-    }
-
-    // ===== INTEREST =====
-    public async Task<bool> ToggleInterestAsync(int fromUserId, int toUserId)
-    {
-        if (fromUserId == toUserId) return false;
-
-        var existing = await _db.Interests.FirstOrDefaultAsync(i => i.FromUserId == fromUserId && i.ToUserId == toUserId);
-        if (existing is not null)
-        {
-            _db.Interests.Remove(existing);
+            var user = await _db.Users.FindAsync(followerId);
+            _db.Notifications.Add(new Notification
+            {
+                UserId = followingId, Type = "follow", ReferenceId = followerId,
+                MessageText = $"{user!.Name} começou a seguir você.", CreatedAt = DateTime.UtcNow
+            });
             await _db.SaveChangesAsync();
-            return false; // removed interest
         }
-
-        _db.Interests.Add(new Interest { FromUserId = fromUserId, ToUserId = toUserId, CreatedAt = DateTime.UtcNow });
-        await _db.SaveChangesAsync();
-
-        var user = await _db.Users.FindAsync(fromUserId);
-        _db.Notifications.Add(new Notification
-        {
-            UserId = toUserId,
-            Type = "interest",
-            ReferenceId = fromUserId,
-            MessageText = $"{user!.Name} demonstrou interesse em você.",
-            CreatedAt = DateTime.UtcNow
-        });
-        await _db.SaveChangesAsync();
-
-        return true; // interested
+        return true;
     }
 
-    // ===== NOTIFICATIONS =====
     public async Task<List<NotificationResponse>> GetNotificationsAsync(int userId, int page, int pageSize)
     {
         return await _db.Notifications

@@ -18,7 +18,7 @@ public class ProfileService : IProfileService
     public async Task<UserProfileResponse?> GetProfileAsync(int userId, int currentUserId)
     {
         var user = await _db.Users
-            .Include(u => u.CompanionProfile)
+            .Include(u => u.CreatorPlan)
             .FirstOrDefaultAsync(u => u.Id == userId);
 
         if (user is null) return null;
@@ -26,24 +26,32 @@ public class ProfileService : IProfileService
         var followersCount = await _db.Follows.CountAsync(f => f.FollowingId == userId);
         var followingCount = await _db.Follows.CountAsync(f => f.FollowerId == userId);
         var postsCount = await _db.Posts.CountAsync(p => p.UserId == userId);
+        var exclusiveCount = await _db.ExclusiveContents.CountAsync(e => e.CreatorId == userId);
+        var subscribersCount = await _db.Subscriptions.CountAsync(s => s.CreatorId == userId && s.PaymentStatus == "active" && (s.EndDate == null || s.EndDate > DateTime.UtcNow));
         var isFollowed = currentUserId > 0 && await _db.Follows.AnyAsync(f => f.FollowerId == currentUserId && f.FollowingId == userId);
-        var isInterested = currentUserId > 0 && await _db.Interests.AnyAsync(i => i.FromUserId == currentUserId && i.ToUserId == userId);
 
-        CompanionProfileResponse? companionProfile = null;
-        if (user.CompanionProfile is not null)
+        // Verificar assinatura do usuário atual neste criador
+        string? mySubscriptionPlan = null;
+        if (currentUserId > 0)
         {
-            var cp = user.CompanionProfile;
-            companionProfile = new CompanionProfileResponse(
-                cp.PriceRange, cp.Verified, cp.Rating, cp.RatingCount, cp.AvailableFor
-            );
+            var sub = await _db.Subscriptions.FirstOrDefaultAsync(s =>
+                s.SubscriberId == currentUserId && s.CreatorId == userId &&
+                s.PaymentStatus == "active" && (s.EndDate == null || s.EndDate > DateTime.UtcNow));
+            mySubscriptionPlan = sub?.PlanType;
+        }
+
+        CreatorPlanResponse? creatorPlan = null;
+        if (user.IsCreator && user.CreatorPlan is not null)
+        {
+            creatorPlan = new CreatorPlanResponse(user.CreatorPlan.FanPrice, user.CreatorPlan.VipPrice);
         }
 
         return new UserProfileResponse(
-            user.Id, user.Name, user.Email, user.Type,
-            user.AvatarUrl, user.Bio, user.City, user.Gender,
-            user.BirthDate, user.Plan,
-            followersCount, followingCount, postsCount,
-            isFollowed, isInterested, companionProfile
+            user.Id, user.Name, user.AvatarUrl, user.BannerUrl,
+            user.Bio, user.City, user.Gender,
+            user.IsCreator, user.PlatformPlan,
+            followersCount, followingCount, postsCount, exclusiveCount, subscribersCount,
+            isFollowed, mySubscriptionPlan, creatorPlan
         );
     }
 
@@ -67,28 +75,72 @@ public class ProfileService : IProfileService
     {
         var user = await _db.Users.FindAsync(userId);
         if (user is null) return false;
-
         user.AvatarUrl = avatarUrl;
         await _db.SaveChangesAsync();
         return true;
     }
 
-    public async Task<bool> UpdateCompanionProfileAsync(int userId, CompanionProfileRequest request)
+    public async Task<bool> UpdateBannerAsync(int userId, string bannerUrl)
     {
         var user = await _db.Users.FindAsync(userId);
-        if (user is null || user.Type != "companion") return false;
+        if (user is null) return false;
+        user.BannerUrl = bannerUrl;
+        await _db.SaveChangesAsync();
+        return true;
+    }
 
-        var profile = await _db.CompanionProfiles.FirstOrDefaultAsync(p => p.UserId == userId);
-        if (profile is null)
+    public async Task<bool> SetCreatorPlansAsync(int creatorId, SetCreatorPlansRequest request)
+    {
+        var user = await _db.Users.FindAsync(creatorId);
+        if (user is null || !user.IsCreator) return false;
+
+        var plan = await _db.CreatorPlans.FirstOrDefaultAsync(p => p.CreatorId == creatorId);
+        if (plan is null)
         {
-            profile = new CompanionProfile { UserId = userId };
-            _db.CompanionProfiles.Add(profile);
+            plan = new CreatorPlan { CreatorId = creatorId };
+            _db.CreatorPlans.Add(plan);
         }
 
-        if (request.PriceRange is not null) profile.PriceRange = request.PriceRange;
-        if (request.AvailableFor is not null) profile.AvailableFor = request.AvailableFor;
+        plan.FanPrice = request.FanPrice;
+        plan.VipPrice = request.VipPrice;
+        plan.UpdatedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync();
         return true;
+    }
+
+    public async Task<List<ExclusiveContentResponse>> GetExclusiveContentAsync(int creatorId, int currentUserId)
+    {
+        // Verificar assinatura
+        string? userPlan = null;
+        if (currentUserId > 0)
+        {
+            var sub = await _db.Subscriptions.FirstOrDefaultAsync(s =>
+                s.SubscriberId == currentUserId && s.CreatorId == creatorId &&
+                s.PaymentStatus == "active" && (s.EndDate == null || s.EndDate > DateTime.UtcNow));
+            userPlan = sub?.PlanType;
+        }
+
+        // Admin (permissão 1) ou próprio criador vê tudo
+        var currentUser = currentUserId > 0 ? await _db.Users.FindAsync(currentUserId) : null;
+        bool isAdmin = currentUser?.Permission == 1;
+        bool isOwner = currentUserId == creatorId;
+
+        var contents = await _db.ExclusiveContents
+            .Where(e => e.CreatorId == creatorId)
+            .OrderBy(e => e.DisplayOrder)
+            .ThenByDescending(e => e.CreatedAt)
+            .ToListAsync();
+
+        return contents.Select(c =>
+        {
+            bool canView = isAdmin || isOwner || userPlan == "vip" || (userPlan == "fan" && c.MinPlan == "fan");
+            return new ExclusiveContentResponse(
+                c.Id, c.Caption, c.MediaType,
+                c.MediaUrl, // Sempre envia (frontend aplica blur se locked)
+                !canView,
+                c.MinPlan, c.CreatedAt
+            );
+        }).ToList();
     }
 }

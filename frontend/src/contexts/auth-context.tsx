@@ -7,8 +7,13 @@ import { AuthResponse } from "@/lib/types";
 interface AuthUser {
   id: number;
   name: string;
+  username: string;
   email: string;
+  isCreator: boolean;
   permission: number;
+  platformPlan: string;
+  isAdmin: boolean;
+  hasLocation: boolean;
 }
 
 interface AuthContextType {
@@ -16,8 +21,9 @@ interface AuthContextType {
   token: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string, type: string) => Promise<void>;
+  register: (name: string, username: string, email: string, password: string, isCreator: boolean) => Promise<void>;
   logout: () => void;
+  updateUserField: (field: string, value: unknown) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -39,16 +45,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     const data = await api.post<AuthResponse>("/auth/login", { email, password });
-    const authUser: AuthUser = { id: data.id, name: data.name, email: data.email, permission: data.permission };
+    const authUser: AuthUser = {
+      id: data.id, name: data.name, username: data.username, email: data.email,
+      isCreator: data.isCreator, permission: data.permission,
+      platformPlan: data.platformPlan, isAdmin: data.permission === 1,
+      hasLocation: data.hasLocation
+    };
     setToken(data.token);
     setUser(authUser);
     localStorage.setItem("token", data.token);
     localStorage.setItem("user", JSON.stringify(authUser));
   };
 
-  const register = async (name: string, email: string, password: string, type: string) => {
-    const data = await api.post<AuthResponse>("/auth/register", { name, email, password, type });
-    const authUser: AuthUser = { id: data.id, name: data.name, email: data.email, permission: data.permission };
+  const register = async (name: string, username: string, email: string, password: string, isCreator: boolean) => {
+    const data = await api.post<AuthResponse>("/auth/register", { name, username, email, password, isCreator });
+    const authUser: AuthUser = {
+      id: data.id, name: data.name, username: data.username, email: data.email,
+      isCreator: data.isCreator, permission: data.permission,
+      platformPlan: data.platformPlan, isAdmin: data.permission === 1,
+      hasLocation: data.hasLocation
+    };
     setToken(data.token);
     setUser(authUser);
     localStorage.setItem("token", data.token);
@@ -62,8 +78,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("user");
   };
 
+  const updateUserField = (field: string, value: unknown) => {
+    setUser(prev => {
+      if (!prev) return prev;
+      const updated = { ...prev, [field]: value };
+      localStorage.setItem("user", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, login, register, logout, updateUserField }}>
       {children}
     </AuthContext.Provider>
   );

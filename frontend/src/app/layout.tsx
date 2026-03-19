@@ -20,9 +20,11 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={inter.className}>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <div id="app-shell" className="mx-auto w-full max-w-[430px] h-dvh flex flex-col overflow-hidden bg-background relative border-x border-border">
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </div>
       </body>
     </html>
   );

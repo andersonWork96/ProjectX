@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjectX.Application.Contracts;
 using ProjectX.Application.Services;
+using ProjectX.Infrastructure.Helpers;
 
 namespace ProjectX.Api.Controllers;
 
@@ -26,24 +27,15 @@ public class PostController : ControllerBase
         [FromForm] List<IFormFile> images)
     {
         var userId = GetUserId();
-        var imageUrls = new List<string>();
+        var imageDataUris = new List<string>();
 
-        if (images.Count > 0)
+        foreach (var image in images)
         {
-            var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "Storage", "uploads");
-            Directory.CreateDirectory(uploadsDir);
-
-            foreach (var image in images)
-            {
-                var fileName = $"{Guid.NewGuid()}{Path.GetExtension(image.FileName)}";
-                var filePath = Path.Combine(uploadsDir, fileName);
-                using var stream = new FileStream(filePath, FileMode.Create);
-                await image.CopyToAsync(stream);
-                imageUrls.Add($"/uploads/{fileName}");
-            }
+            var dataUri = await ImageHelper.ToBase64DataUri(image);
+            imageDataUris.Add(dataUri);
         }
 
-        var result = await _postService.CreateAsync(userId, caption, imageUrls);
+        var result = await _postService.CreateAsync(userId, caption, imageDataUris);
         return Ok(result);
     }
 

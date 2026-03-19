@@ -18,34 +18,49 @@ public class AuthService : IAuthService
     public async Task<AuthResult> RegisterAsync(RegisterRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Name) ||
+            string.IsNullOrWhiteSpace(request.Username) ||
             string.IsNullOrWhiteSpace(request.Email) ||
             string.IsNullOrWhiteSpace(request.Password))
         {
-            return AuthResult.BadRequest("Nome, email e senha sao obrigatorios.");
+            return AuthResult.BadRequest("Nome, nome artístico, email e senha são obrigatórios.");
+        }
+
+        var username = request.Username.Trim().ToLowerInvariant();
+
+        // Validar formato do username (só letras, números, pontos e underscores)
+        if (!System.Text.RegularExpressions.Regex.IsMatch(username, @"^[a-z0-9._]{3,30}$"))
+        {
+            return AuthResult.BadRequest("Nome artístico deve ter 3-30 caracteres (letras, números, . e _).");
+        }
+
+        var usernameExists = await _users.UsernameExistsAsync(username);
+        if (usernameExists)
+        {
+            return AuthResult.Conflict("Esse nome artístico já está em uso.");
         }
 
         var email = request.Email.Trim().ToLowerInvariant();
-        var exists = await _users.EmailExistsAsync(email);
-        if (exists)
+        var emailExists = await _users.EmailExistsAsync(email);
+        if (emailExists)
         {
-            return AuthResult.Conflict("Email ja cadastrado.");
+            return AuthResult.Conflict("Email já cadastrado.");
         }
 
-        var type = request.Type == "companion" ? "companion" : "client";
         var user = new User
         {
             Name = request.Name.Trim(),
+            Username = username,
             Email = email,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             CreatedAt = DateTime.UtcNow,
-            Type = type
+            IsCreator = request.IsCreator
         };
 
         await _users.AddAsync(user);
         await _users.SaveChangesAsync();
 
         var token = _tokens.Generate(user);
-        return AuthResult.Ok(new AuthResponse(user.Id, user.Name, user.Email, user.Permission, token));
+        return AuthResult.Ok(new AuthResponse(user.Id, user.Name, user.Username, user.Email, user.IsCreator, user.Permission, user.PlatformPlan, user.Latitude.HasValue, token));
     }
 
     public async Task<AuthResult> LoginAsync(LoginRequest request)
@@ -64,7 +79,7 @@ public class AuthService : IAuthService
         }
 
         var token = _tokens.Generate(user);
-        return AuthResult.Ok(new AuthResponse(user.Id, user.Name, user.Email, user.Permission, token));
+        return AuthResult.Ok(new AuthResponse(user.Id, user.Name, user.Username, user.Email, user.IsCreator, user.Permission, user.PlatformPlan, user.Latitude.HasValue, token));
     }
 
     public async Task<AuthResult> ChangePasswordAsync(ChangePasswordRequest request)
@@ -92,5 +107,10 @@ public class AuthService : IAuthService
         await _users.SaveChangesAsync();
 
         return AuthResult.Success("Senha alterada com sucesso.");
+    }
+
+    public Task<bool> UsernameExistsAsync(string username)
+    {
+        return _users.UsernameExistsAsync(username);
     }
 }

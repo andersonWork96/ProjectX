@@ -31,7 +31,8 @@ public class JwtTokenService : ITokenService
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Email, user.Email),
             new(ClaimTypes.Name, user.Name),
-            new("permissao", user.Permission.ToString())
+            new("isCreator", user.IsCreator.ToString()),
+            new("platformPlan", user.PlatformPlan)
         };
 
         var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));

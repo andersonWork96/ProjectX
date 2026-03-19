@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { api } from "@/lib/api";
-import { Home, PlusCircle, Bell, User, LayoutDashboard, MessageCircle, Shield, Camera } from "lucide-react";
+import { Home, PlusCircle, Bell, User, LayoutDashboard, MessageCircle, Shield, Camera, LogOut } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { NotificationsDrawer } from "@/components/notifications-drawer";
 
@@ -41,34 +41,41 @@ export function TopBar() {
         </header>
 
         {/* Action bar */}
-        <div className="border-b border-white/[0.04] bg-card/30">
-          <div className="flex items-center justify-between px-4 h-9">
+        <div className="border-b border-white/[0.04] bg-gradient-to-r from-card/40 via-card/60 to-card/40 backdrop-blur-sm">
+          <div className="flex items-center justify-between px-4 h-11">
             {user ? (
               <>
-                <span className="text-[11px] text-white/30">Olá, <span className="text-white/70 font-medium">{user.name.split(" ")[0]}</span></span>
-                <div className="flex items-center gap-0.5">
-                  <Link href="/chat" className="p-2 rounded-full hover:bg-white/5 transition">
-                    <MessageCircle size={15} className="text-white/40" />
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center border border-white/[0.06]">
+                    <span className="text-[10px] font-bold gradient-brand-text">{user.name.charAt(0).toUpperCase()}</span>
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-white/70 font-medium">{user.name.split(" ")[0]}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Link href="/chat" className="w-9 h-9 rounded-2xl bg-gradient-to-br from-white/[0.06] to-white/[0.02] hover:from-purple-500/15 hover:to-pink-500/10 flex items-center justify-center transition-all border border-white/[0.06] hover:border-purple-500/20 hover:shadow-md hover:shadow-purple-500/5">
+                    <MessageCircle size={16} className="text-white/50 hover:text-white/80 transition" />
                   </Link>
-                  <button onClick={() => { setShowNotifications(true); setUnreadCount(0); }} className="p-2 rounded-full hover:bg-white/5 transition relative">
-                    <Bell size={15} className="text-white/40" />
+                  <button onClick={() => { setShowNotifications(true); setUnreadCount(0); }} className="w-9 h-9 rounded-2xl bg-gradient-to-br from-white/[0.06] to-white/[0.02] hover:from-purple-500/15 hover:to-pink-500/10 flex items-center justify-center transition-all border border-white/[0.06] hover:border-purple-500/20 hover:shadow-md hover:shadow-purple-500/5 relative">
+                    <Bell size={16} className="text-white/50" />
                     {unreadCount > 0 && (
-                      <span className="absolute top-0.5 right-0.5 min-w-[14px] h-[14px] rounded-full gradient-hot text-white text-[8px] font-bold flex items-center justify-center px-0.5 animate-pulse-glow">
+                      <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] rounded-full gradient-hot text-white text-[9px] font-bold flex items-center justify-center px-1 animate-pulse-glow shadow-lg shadow-pink-500/30 ring-2 ring-[hsl(var(--background))]">
                         {unreadCount > 99 ? "99+" : unreadCount}
                       </span>
                     )}
                   </button>
-                  <button onClick={handleLogout} className="text-[10px] text-white/25 ml-1 px-2 py-1 hover:text-white/50 transition">
-                    Sair
+                  <button onClick={handleLogout} className="w-9 h-9 rounded-2xl bg-gradient-to-br from-white/[0.06] to-white/[0.02] hover:from-red-500/15 hover:to-red-500/5 flex items-center justify-center transition-all border border-white/[0.06] hover:border-red-500/20 group">
+                    <LogOut size={15} className="text-white/30 group-hover:text-red-400 transition" />
                   </button>
                 </div>
               </>
             ) : (
               <>
-                <span className="text-[11px] text-white/30">Explore</span>
+                <span className="text-[11px] text-white/30">Explore o feed</span>
                 <div className="flex items-center gap-2">
-                  <Link href="/login" className="text-[11px] text-white/40 hover:text-white/70 transition">Entrar</Link>
-                  <Link href="/cadastro" className="text-[11px] gradient-brand text-white px-3 py-1 rounded-full font-semibold">Criar conta</Link>
+                  <Link href="/login" className="text-[11px] text-white/50 hover:text-white/80 transition font-medium px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.06]">Entrar</Link>
+                  <Link href="/cadastro" className="text-[11px] gradient-brand text-white px-4 py-1.5 rounded-xl font-bold shadow-lg shadow-pink-500/10">Criar conta</Link>
                 </div>
               </>
             )}
@@ -104,10 +111,11 @@ export function BottomBar() {
 
           if (isCreate) {
             return (
-              <Link key={item.href} href={item.href} className="relative -mt-4">
-                <div className="w-12 h-12 rounded-full gradient-brand flex items-center justify-center glow-md">
-                  <PlusCircle size={22} className="text-white" />
+              <Link key={item.href} href={item.href} className="flex flex-col items-center gap-0.5 py-1 px-3">
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isActive ? "gradient-brand shadow-lg shadow-pink-500/30" : "bg-gradient-to-br from-pink-500/30 to-purple-600/40 border border-pink-500/20 shadow-md shadow-purple-500/10"}`}>
+                  <PlusCircle size={18} className="text-white" />
                 </div>
+                <span className={`text-[9px] ${isActive ? "text-[hsl(var(--accent))] font-semibold" : "text-white/35"}`}>Criar</span>
               </Link>
             );
           }

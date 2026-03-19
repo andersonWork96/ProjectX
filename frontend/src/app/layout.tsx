@@ -20,7 +20,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={inter.className}>
-        <div id="app-shell" className="mx-auto w-full max-w-[430px] h-dvh flex flex-col overflow-hidden bg-background relative border-x border-border">
+        <div id="app-shell" className="mx-auto w-full max-w-[430px] h-dvh flex flex-col overflow-hidden bg-background relative border-x border-white/[0.03] shadow-[0_0_80px_rgba(147,51,234,0.05)]">
           <AuthProvider>
             {children}
           </AuthProvider>

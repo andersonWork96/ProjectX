@@ -15,12 +15,13 @@ public class PostService : IPostService
         _db = db;
     }
 
-    public async Task<PostResponse> CreateAsync(int userId, string? caption, List<string> imageUrls)
+    public async Task<PostResponse> CreateAsync(int userId, string? caption, List<string> imageUrls, bool isCensored = false)
     {
         var post = new Post
         {
             UserId = userId,
             Caption = caption,
+            IsCensored = isCensored,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -42,7 +43,7 @@ public class PostService : IPostService
         return new PostResponse(
             post.Id, userId, user!.Name, user.AvatarUrl,
             user.IsCreator, true,
-            caption, imageUrls, 0, 0, false, post.CreatedAt
+            caption, imageUrls, 0, 0, false, isCensored, post.CreatedAt
         );
     }
 
@@ -126,6 +127,7 @@ public class PostService : IPostService
             post.Likes.Count,
             post.Comments.Count,
             post.Likes.Any(l => l.UserId == currentUserId),
+            post.IsCensored,
             post.CreatedAt
         );
     }

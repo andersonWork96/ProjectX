@@ -5,6 +5,7 @@
 html {
   height: 100%;
   overflow: hidden;
+  background: #000;
 }
 
 body {
@@ -12,8 +13,44 @@ body {
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #000;
+  background-color: #0d0a18;
   color: hsl(var(--foreground));
+}
+
+/* Grafiato texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    /* micro texture - simulates grafiato grain */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E"),
+    /* diagonal scratches - grafiato strokes */
+    repeating-linear-gradient(
+      135deg,
+      transparent,
+      transparent 3px,
+      rgba(147, 51, 234, 0.008) 3px,
+      rgba(147, 51, 234, 0.008) 4px
+    ),
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 5px,
+      rgba(190, 24, 93, 0.006) 5px,
+      rgba(190, 24, 93, 0.006) 6px
+    ),
+    /* subtle depth spots */
+    radial-gradient(ellipse 600px 400px at 15% 30%, rgba(147, 51, 234, 0.04) 0%, transparent 70%),
+    radial-gradient(ellipse 500px 350px at 85% 70%, rgba(190, 24, 93, 0.03) 0%, transparent 70%),
+    radial-gradient(ellipse 400px 300px at 50% 10%, rgba(99, 102, 241, 0.025) 0%, transparent 60%);
+}
+
+body > * {
+  position: relative;
+  z-index: 1;
 }
 
 * {
@@ -109,13 +146,31 @@ a {
   animation: float 3s ease-in-out infinite;
 }
 
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.animate-shimmer {
+  background-size: 200% auto;
+  animation: shimmer 3s linear infinite;
+}
+
 /* Chat background pattern */
 .chat-bg {
-  background-color: hsl(270 20% 4%);
+  background-color: #0d0a18;
   background-image:
-    radial-gradient(circle at 20% 50%, rgba(190, 24, 93, 0.03) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(147, 51, 234, 0.03) 0%, transparent 50%),
-    radial-gradient(circle at 50% 80%, rgba(190, 24, 93, 0.02) 0%, transparent 40%);
+    radial-gradient(circle at 20% 50%, rgba(190, 24, 93, 0.04) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(147, 51, 234, 0.04) 0%, transparent 50%),
+    radial-gradient(circle at 50% 80%, rgba(190, 24, 93, 0.03) 0%, transparent 40%),
+    /* grafiato texture in chat too */
+    repeating-linear-gradient(
+      120deg,
+      transparent,
+      transparent 4px,
+      rgba(147, 51, 234, 0.01) 4px,
+      rgba(147, 51, 234, 0.01) 5px
+    );
   position: relative;
 }
 
@@ -135,24 +190,24 @@ a {
 
 @layer base {
   :root {
-    --background: 270 20% 4%;
-    --foreground: 0 0% 95%;
-    --card: 270 15% 7%;
-    --card-foreground: 0 0% 95%;
-    --popover: 270 15% 7%;
-    --popover-foreground: 0 0% 95%;
+    --background: 268 20% 5%;
+    --foreground: 270 10% 95%;
+    --card: 268 18% 8%;
+    --card-foreground: 270 10% 95%;
+    --popover: 268 18% 9%;
+    --popover-foreground: 270 10% 95%;
     --primary: 330 80% 45%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 270 12% 12%;
-    --secondary-foreground: 0 0% 95%;
-    --muted: 270 10% 16%;
-    --muted-foreground: 270 5% 50%;
+    --secondary: 268 15% 12%;
+    --secondary-foreground: 270 10% 95%;
+    --muted: 268 12% 16%;
+    --muted-foreground: 270 8% 48%;
     --accent: 340 90% 55%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 270 12% 12%;
-    --input: 270 12% 12%;
+    --border: 268 15% 13%;
+    --input: 268 15% 12%;
     --ring: 330 80% 45%;
     --radius: 0.75rem;
   }

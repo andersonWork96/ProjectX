@@ -31,8 +31,19 @@ export interface Post {
   likesCount: number;
   commentsCount: number;
   likedByMe: boolean;
+  isCensored: boolean;
   createdAt: string;
 }
+
+export interface TrendingCreator {
+  id: number;
+  name: string;
+  avatarUrl: string | null;
+  isOnline: boolean;
+  subscribersCount: number;
+  newSubscribersWeek: number;
+}
+
 
 export interface PagedResponse<T> {
   items: T[];
@@ -74,6 +85,7 @@ export interface ExclusiveContent {
   mediaUrl: string | null;
   isLocked: boolean;
   minPlan: string;
+  displayOrder: number;
   createdAt: string;
 }
 

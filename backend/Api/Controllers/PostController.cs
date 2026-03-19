@@ -24,6 +24,7 @@ public class PostController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<PostResponse>> Create(
         [FromForm] string? caption,
+        [FromForm] bool isCensored,
         [FromForm] List<IFormFile> images)
     {
         var userId = GetUserId();
@@ -35,7 +36,7 @@ public class PostController : ControllerBase
             imageDataUris.Add(dataUri);
         }
 
-        var result = await _postService.CreateAsync(userId, caption, imageDataUris);
+        var result = await _postService.CreateAsync(userId, caption, imageDataUris, isCensored);
         return Ok(result);
     }
 

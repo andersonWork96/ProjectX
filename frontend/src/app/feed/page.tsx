@@ -7,6 +7,7 @@ import { Post, PagedResponse } from "@/lib/types";
 import { PostCard } from "@/components/post-card";
 import { TopBar, BottomBar } from "@/components/navbar";
 import { LocationModal } from "@/components/location-modal";
+import { TrendingCreators } from "@/components/trending-creators";
 import { RefreshCw } from "lucide-react";
 
 export default function FeedPage() {
@@ -70,6 +71,9 @@ export default function FeedPage() {
     <>
       <TopBar />
       <main ref={mainRef} className="flex-1 overflow-y-auto scrollbar-hide">
+        {/* Banner Em Alta */}
+        <TrendingCreators />
+
         {posts.length === 0 && !loading && (
           <div className="text-center py-20">
             <p className="text-lg text-white/30">Nenhuma publicação ainda.</p>

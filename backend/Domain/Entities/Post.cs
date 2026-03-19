@@ -5,6 +5,7 @@ public class Post
     public int Id { get; set; }
     public int UserId { get; set; }
     public string? Caption { get; set; }
+    public bool IsCensored { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public User User { get; set; } = null!;

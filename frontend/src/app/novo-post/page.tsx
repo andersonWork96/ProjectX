@@ -7,7 +7,7 @@ import { api } from "@/lib/api";
 import { imgSrc } from "@/lib/image";
 import { Post } from "@/lib/types";
 import { TopBar, BottomBar } from "@/components/navbar";
-import { Camera, X, Sparkles, Type, ChevronRight, User } from "lucide-react";
+import { Camera, X, Sparkles, Type, ChevronRight, User, EyeOff } from "lucide-react";
 
 export default function NovoPostPage() {
   const { user } = useAuth();
@@ -16,6 +16,7 @@ export default function NovoPostPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isCensored, setIsCensored] = useState(false);
   const [step, setStep] = useState<"media" | "details">("media");
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -39,6 +40,7 @@ export default function NovoPostPage() {
     try {
       const formData = new FormData();
       if (caption) formData.append("caption", caption);
+      formData.append("isCensored", String(isCensored));
       files.forEach(file => formData.append("images", file));
       await api.post<Post>("/api/posts", formData);
       router.push("/feed");
@@ -157,6 +159,33 @@ export default function NovoPostPage() {
               />
               <p className="text-[10px] text-muted-foreground text-right mt-1">{caption.length}/1000</p>
             </div>
+
+            {/* Toggle censurado (apenas criadores) */}
+            {user.isCreator && (
+              <div className="mb-4">
+                <button type="button" onClick={() => setIsCensored(!isCensored)}
+                  className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border transition ${
+                    isCensored
+                      ? "border-[hsl(var(--accent))]/50 bg-[hsl(var(--accent))]/10"
+                      : "border-border/50 bg-card"
+                  }`}>
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                    isCensored ? "gradient-hot" : "bg-secondary"
+                  }`}>
+                    <EyeOff size={18} className="text-white" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-sm font-medium">Conteúdo censurado</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      Fotos ficam borradas no feed
+                    </p>
+                  </div>
+                  <div className={`w-10 h-5 rounded-full transition-colors ${isCensored ? "bg-[hsl(var(--accent))]" : "bg-secondary"}`}>
+                    <div className={`w-4 h-4 rounded-full bg-white mt-0.5 transition-transform ${isCensored ? "translate-x-5.5 ml-[22px]" : "ml-0.5"}`} />
+                  </div>
+                </button>
+              </div>
+            )}
 
             {/* Botões */}
             <div className="flex flex-col gap-2">

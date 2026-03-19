@@ -7,7 +7,7 @@ import { api } from "@/lib/api";
 import { imgSrc } from "@/lib/image";
 import { UserProfile, ExclusiveContent } from "@/lib/types";
 import { TopBar, BottomBar } from "@/components/navbar";
-import { ArrowLeft, User, MessageCircle, Lock, Crown, Star, Image, Film, Sparkles, Pencil, Camera, Trash2, GripVertical } from "lucide-react";
+import { ArrowLeft, User, MessageCircle, Lock, Crown, Star, Image, Film, Sparkles, Pencil, Camera, Trash2, GripVertical, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 export default function PerfilPage() {
@@ -46,6 +46,7 @@ export default function PerfilPage() {
   };
 
   const handleDeleteExclusive = async (contentId: number) => {
+    if (!authUser?.isAdmin) return;
     if (!confirm("Remover conteúdo por violação? O criador será notificado.")) return;
     try {
       await api.delete(`/api/admin/exclusive/${contentId}`);
@@ -201,10 +202,12 @@ export default function PerfilPage() {
                 <p className="text-lg font-bold gradient-brand-text">{profile.exclusiveCount}</p>
                 <p className="text-[10px] text-muted-foreground">Conteúdos</p>
               </div>
+              {isMe && (
               <div className="flex-1 text-center">
                 <p className="text-lg font-bold text-yellow-400">{profile.subscribersCount}</p>
                 <p className="text-[10px] text-muted-foreground">Assinantes</p>
               </div>
+              )}
               </>
             )}
           </div>
@@ -244,6 +247,23 @@ export default function PerfilPage() {
               </Link>
             )}
           </div>
+        )}
+
+        {/* Link planos da plataforma (próprio perfil) */}
+        {isMe && (
+          <Link href="/planos" className="mx-3 mt-3 flex items-center justify-between py-3 px-4 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/15 rounded-xl group hover:border-purple-500/30 transition">
+            <div className="flex items-center gap-2">
+              <Crown size={16} className="text-purple-400" />
+              <div>
+                <p className="text-xs font-bold text-white/80">Plano da Plataforma</p>
+                <p className="text-[10px] text-white/30">
+                  {authUser?.platformPlan === "free" ? "Gratuito" : authUser?.platformPlan === "premium" ? "Premium" : authUser?.platformPlan === "elite" ? "Elite" : "Gratuito"}
+                  {" — "}Ver planos
+                </p>
+              </div>
+            </div>
+            <ChevronRight size={14} className="text-white/20 group-hover:text-white/50 transition" />
+          </Link>
         )}
 
         {/* Conteúdo do criador */}
